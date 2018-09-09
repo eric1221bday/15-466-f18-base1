@@ -62,8 +62,7 @@ NAMES =
 	vertex_color_program
 	Scene
 	Mode
-	GameMode
-	CratesMode
+	PhoneBankMode
 	MenuMode
 	Load
 	MeshBuffer

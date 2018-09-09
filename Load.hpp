@@ -27,32 +27,32 @@
 #include <stdexcept>
 
 enum LoadTag : uint32_t {
-	LoadTagInit = 0, //used for loading mesh and texture blobs before main
-	LoadTagDefault = 1,
-	LoadTagLate = 2,
-	LoadTagCount = 3
+  LoadTagInit = 0, //used for loading mesh and texture blobs before main
+  LoadTagDefault = 1,
+  LoadTagLate = 2,
+  LoadTagCount = 3
 };
 
-void add_load_function(LoadTag tag, std::function< void() > const &fn);
+void add_load_function(LoadTag tag, std::function<void()> const &fn);
 void call_load_functions(); //called by main() after GL context created.
 
-template< typename T >
+template<typename T>
 struct Load {
-	//Constructing a Load< T > adds the passed function to the list of functions to call:
-	Load( LoadTag tag, const std::function< T const *() > &load_fn ) : value(nullptr) {
-		add_load_function(tag, [this,load_fn](){
-			this->value = load_fn();
-			if (!(this->value)) {
-				throw std::runtime_error("Loading failed.");
-			}
-		});
-	}
+  //Constructing a Load< T > adds the passed function to the list of functions to call:
+  Load(LoadTag tag, const std::function<T const *()> &load_fn) : value(nullptr) {
+    add_load_function(tag, [this, load_fn]() {
+      this->value = load_fn();
+      if (!(this->value)) {
+        throw std::runtime_error("Loading failed.");
+      }
+    });
+  }
 
-	//Make a "Load< T >" behave like a "T const *":
-	explicit operator bool() { return value != nullptr; }
-	T const &operator*() { return *value; }
-	T const *operator->() { return value; }
+  //Make a "Load< T >" behave like a "T const *":
+  explicit operator bool() { return value != nullptr; }
+  T const &operator*() { return *value; }
+  T const *operator->() { return value; }
 
-	T const *value;
+  T const *value;
 };
 

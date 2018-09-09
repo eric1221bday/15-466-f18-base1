@@ -6,3 +6,6 @@ dist/SDL2.dll
 kit-libs-win
 kit-libs-osx
 kit-libs-linux
+cmake-build-debug
+.idea
+.vscode

@@ -112,6 +112,11 @@ struct PhoneBankMode : public Mode {
     }
   };
 
+  enum class mission_mode {
+    RINGING,
+    TASK,
+  };
+
   bool mouse_captured = false;
 
   Scene scene;
@@ -124,6 +129,7 @@ struct PhoneBankMode : public Mode {
 
   Scene::Object *selectable_phone = nullptr;
   Scene::Object *ringing_phone = nullptr;
+  Scene::Object *talk_phone = nullptr;
 
   std::unordered_map<Scene::Object *, Box3> phone_hitbox;
 
@@ -134,13 +140,18 @@ struct PhoneBankMode : public Mode {
 
   uint32_t merits = 0, strikes = 0;
 
+  mission_mode mode = mission_mode::RINGING;
+
   // when this reaches zero, the 'dot' sample is triggered at the small crate:
   //  float dot_countdown = 1.0f;
   float instruction_countdown = 0.0f;
-  float instruction_duration = 2.0f;
+  float instruction_duration = 3.0f;
 
   std::default_random_engine generator;
-  std::uniform_int_distribution<uint32_t> distribution;
+  std::uniform_int_distribution<uint32_t> distribution_phones,
+      distribution_mission, distribution_answers;
+
+  uint32_t answer_index;
 
   // this 'loop' sample is played at the large crate:
   std::shared_ptr<Sound::PlayingSample> loop;

@@ -46,7 +46,10 @@ Load<WalkMesh> walk_mesh(LoadTagDefault, []() {
 });
 
 PhoneBankMode::PhoneBankMode()
-    : generator(std::time(nullptr)), distribution(0, 3) {
+    : generator(std::time(nullptr)),
+      distribution_phones(0, 3),
+      distribution_mission(0, 1),
+      distribution_answers(0, 4) {
   auto attach_object = [this](Scene::Transform *transform,
                               std::string const &name) {
     Scene::Object *object = scene.new_object(transform);
@@ -189,13 +192,25 @@ bool PhoneBankMode::handle_event(SDL_Event const &evt,
   if (evt.type == SDL_KEYDOWN &&
       evt.key.keysym.scancode == SDL_SCANCODE_SPACE && selectable_phone) {
     if (selectable_phone == ringing_phone) {
+      uint32_t resolve_option = distribution_mission(generator);
+
+      if (resolve_option) {
+        mode = mission_mode::TASK;
+        answer_index = distribution_answers(generator);
+        talk_phone = choose_phone();
+        ringing_phone = nullptr;
+        ringing->set_volume(0.0f);
+
+      } else {
+        merits++;
+        ringing_phone = choose_phone();
+        ringing->set_position(ringing_phone->transform->position);
+        mode = mission_mode::RINGING;
+      }
       instruction_countdown = instruction_duration;
-      merits++;
-      ringing_phone = choose_phone();
-      ringing->set_position(ringing_phone->transform->position);
+
     } else {
-      strikes++;
-      dial_tone->play(selectable_phone->transform->position, 3.0f);
+      show_phone_menu();
     }
   }
 
@@ -326,10 +341,26 @@ void PhoneBankMode::draw(glm::uvec2 const &drawable_size) {
 
     // phone activation instructions
     if (selectable_phone) {
-      std::string phone_name("PHONE");
+      std::string phone_name;
+      glm::vec4 phone_color;
+
+      if (selectable_phone == first_phone) {
+        phone_name = "FIRST PHONE";
+        phone_color = glm::vec4(0.0f, 0.0f, 0.5f, 1.0f);
+      } else if (selectable_phone == second_phone) {
+        phone_name = "SECOND PHONE";
+        phone_color = glm::vec4(0.0f, 0.5f, 0.0f, 1.0f);
+      } else if (selectable_phone == third_phone) {
+        phone_name = "THIRD PHONE";
+        phone_color = glm::vec4(0.5f, 0.0f, 0.0f, 1.0f);
+      } else {
+        phone_name = "FOURTH PHONE";
+        phone_color = glm::vec4(0.5f, 0.5f, 0.0f, 1.0f);
+      }
+
       float width = text_width(phone_name, height);
       draw_text(phone_name, glm::vec2(-0.5f * width, -0.4f), height,
-                glm::vec4(0.0f, 0.0f, 0.5f, 1.0f));
+                phone_color);
       std::string activation_instruction("PRESS SPACE TO ACTIVATE");
       float instruction_height = 0.04f;
       width = text_width(activation_instruction, instruction_height);
@@ -337,10 +368,34 @@ void PhoneBankMode::draw(glm::uvec2 const &drawable_size) {
                 instruction_height, glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
     }
 
-    width = text_width(resolution_display, height);
-    draw_text(resolution_display, glm::vec2(-0.5f * width, -0.3f), height,
-              glm::vec4(1.0f, 1.0f, 1.0f,
-                        instruction_countdown / instruction_duration));
+    switch (mode) {
+      case mission_mode::RINGING:
+        width = text_width(resolution_display, height);
+        draw_text(resolution_display, glm::vec2(-0.5f * width, -0.3f), height,
+                  glm::vec4(1.0f, 1.0f, 1.0f,
+                            instruction_countdown / instruction_duration));
+        break;
+      case mission_mode::TASK:
+        std::string phone_name;
+        std::stringstream task_ss;
+        if (talk_phone == first_phone) {
+          phone_name = "FIRST PHONE";
+        } else if (talk_phone == second_phone) {
+          phone_name = "SECOND PHONE";
+        } else if (talk_phone == third_phone) {
+          phone_name = "THIRD PHONE";
+        } else {
+          phone_name = "FOURTH PHONE";
+        }
+        task_ss << "CALL THE " << phone_name << " AND SAY "
+                << answers[answer_index];
+        std::string task_str = task_ss.str();
+        width = text_width(task_str, height);
+        draw_text(task_str, glm::vec2(-0.5f * width, -0.3f), height,
+                  glm::vec4(1.0f, 1.0f, 1.0f,
+                            instruction_countdown / instruction_duration));
+        break;
+    }
 
     // handle drawing merits
     std::stringstream merit_ss;
@@ -359,7 +414,6 @@ void PhoneBankMode::draw(glm::uvec2 const &drawable_size) {
     }
     std::string strike_str = strike_ss.str();
     height = 0.1f;
-    width = text_width(strike_str, height);
     draw_text(strike_str, glm::vec2(0.95f, 0.85f), height,
               glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
 
@@ -370,7 +424,7 @@ void PhoneBankMode::draw(glm::uvec2 const &drawable_size) {
 }
 
 Scene::Object *PhoneBankMode::choose_phone() {
-  uint32_t number = distribution(generator);
+  uint32_t number = distribution_phones(generator);
 
   if (number == 0) {
     return first_phone;
@@ -398,7 +452,56 @@ void PhoneBankMode::handle_phone() {
   }
 }
 
-void PhoneBankMode::show_phone_menu() {}
+void PhoneBankMode::show_phone_menu() {
+  std::shared_ptr<MenuMode> menu = std::make_shared<MenuMode>();
+
+  std::shared_ptr<Mode> game = shared_from_this();
+  menu->background = game;
+
+  for (auto const word : answers) {
+    menu->choices.emplace_back(word, [word, game, this]() {
+      switch (mode) {
+        case mission_mode::RINGING:
+          strikes++;
+          dial_tone->play(selectable_phone->transform->position, 3.0f);
+          break;
+        case mission_mode::TASK:
+          std::cout << "selected: " << word
+                    << ", answer is: " << answers[answer_index] << std::endl;
+          if (selectable_phone == talk_phone && word == answers[answer_index]) {
+            uint32_t resolve_option = distribution_mission(generator);
+
+            if (resolve_option) {
+              mode = mission_mode::TASK;
+              answer_index = distribution_answers(generator);
+              talk_phone = choose_phone();
+              ringing_phone = nullptr;
+              ringing->set_volume(0.0f);
+              instruction_countdown = instruction_duration;
+
+            } else {
+              merits++;
+              ringing_phone = choose_phone();
+              ringing->set_position(ringing_phone->transform->position);
+              ringing->set_volume(2.0f);
+              mode = mission_mode::RINGING;
+            }
+          } else {
+            strikes++;
+            dial_tone->play(selectable_phone->transform->position, 3.0f);
+          }
+
+          break;
+      }
+      Mode::set_current(game);
+    });
+  }
+  menu->choices.emplace_back("CANCEL", [game]() { Mode::set_current(game); });
+
+  menu->selected = 1;
+
+  Mode::set_current(menu);
+}
 
 void PhoneBankMode::show_win_menu() {
   std::shared_ptr<MenuMode> menu = std::make_shared<MenuMode>();

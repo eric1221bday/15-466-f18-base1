@@ -82,6 +82,7 @@ def write_xfh(obj):
 
     xfh_data += parent_ref
     xfh_data += ref
+    xfh_data += write_string(obj.name)
     xfh_data += struct.pack('3f', transform[0].x, transform[0].y, transform[0].z)
     xfh_data += struct.pack('4f', transform[1].x, transform[1].y, transform[1].z, transform[1].w)
     xfh_data += struct.pack('3f', transform[2].x, transform[2].y, transform[2].z)

@@ -19,7 +19,8 @@ set(MAIN_FILES main.cpp
         MeshBuffer.cpp
         draw_text.cpp
         PhoneBankMode.cpp
-        Sound.cpp)
+        Sound.cpp
+        WalkMesh.cpp)
 
 add_executable(walking-simulator ${MAIN_FILES})
 

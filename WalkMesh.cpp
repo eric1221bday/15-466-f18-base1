@@ -1,15 +1,30 @@
 #include "WalkMesh.hpp"
 
-WalkMesh(std::vector<glm::vec3>
-const &vertices_,
-std::vector<glm::uvec3> const &triangles_
-)
-:
-vertices (vertices_), triangles(triangles_) {
-  //TODO: construct next_vertex map
+//WalkMesh::WalkMesh(std::vector<glm::vec3>
+//                   const &vertices_,
+//                   std::vector<glm::uvec3> const &triangles_,
+//                   std::vector<glm::vec3> const &vertex_normals_
+//)
+//    :
+//    vertices(vertices_), triangles(triangles_), vertex_normals(vertex_normals_) {
+//  //TODO: construct next_vertex map
+//}
+
+WalkMesh::WalkMesh(std::string filename) {
+  std::ifstream file(filename, std::ios::binary);
+
+  static_assert(sizeof(glm::vec3) == 3 * 4, "vec3 is packed.");
+  static_assert(sizeof(glm::uvec3) == 3 * 4, "uvec3 is packed.");
+
+  read_chunk(file, "vtx0", &vertices);
+  read_chunk(file, "tri0", &triangles);
+  read_chunk(file, "nom0", &vertex_normals);
+
+  std::cout << vertices.size() << " number of vertices" << std::endl;
+  std::cout << triangles.size() << " number of triangles" << std::endl;
 }
 
-WalkPoint WalkMesh::start(glm::vec3 const &world_point) const {
+WalkMesh::WalkPoint WalkMesh::start(glm::vec3 const &world_point) const {
   WalkPoint closest;
   //TODO: iterate through triangles
   //TODO: for each triangle, find closest point on triangle to world_point
@@ -19,7 +34,7 @@ WalkPoint WalkMesh::start(glm::vec3 const &world_point) const {
 
 void WalkMesh::walk(WalkPoint &wp, glm::vec3 const &step) const {
   //TODO: project step to barycentric coordinates to get weights_step
-  glm::vec3 weights_step;
+//  glm::vec3 weights_step;
 
   //TODO: when does wp.weights + t * weights_step cross a triangle edge?
   float t = 1.0f;

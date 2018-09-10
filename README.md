@@ -52,16 +52,22 @@ Before you dive into the code, it helps to understand the overall structure of t
 
 ## Asset Build Instructions
 
-In order to generate the ```dist/crates.pnc``` file, tell blender to execute the ```meshes/export-meshes.py``` script:
+In order to generate the ```dist/phone-bank.pnc``` file, tell blender to execute the ```meshes/export-meshes.py``` script:
 
 ```
 blender --background --python meshes/export-meshes.py -- meshes/phone-bank.blend dist/phone-bank.pnc
 ```
 
-In order to generate the ```dist/crates.scene``` file, tell blender to execute the ```meshes/export-scene.py``` script:
+In order to generate the ```dist/phone-bank.scene``` file, tell blender to execute the ```meshes/export-scene.py``` script:
 
 ```
 blender --background --python meshes/export-scene.py -- meshes/phone-bank.blend dist/phone-bank.scene
+```
+
+In order to generate the ```dist/phone-bank-walk.blob``` file, tell blender to execute the ```meshes/export-walk-mesh.py``` script:
+
+```
+blender --background --python meshes/export-walk-mesh.py -- meshes/phone-bank.blend dist/phone-bank-walk.blob
 ```
 
 There is a Makefile in the ```meshes``` directory that will do this for you.

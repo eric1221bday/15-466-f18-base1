@@ -34,6 +34,10 @@ Load<Sound::Sample> sample_loop(LoadTagDefault, []() {
   return new Sound::Sample(data_path("loop.wav"));
 });
 
+Load<WalkMesh> walk_mesh(LoadTagDefault, []() {
+  return new WalkMesh(data_path("phone-bank-walk.blob"));
+});
+
 PhoneBankMode::PhoneBankMode() {
 
   auto attach_object = [this](Scene::Transform *transform, std::string const &name) {
@@ -56,12 +60,13 @@ PhoneBankMode::PhoneBankMode() {
   {
     struct MeshRef {
       int32_t ref;
-      uint32_t name_begin, name_end;
+      uint32_t mesh_name_begin, mesh_name_end;
     };
 
     struct TransformEntry {
       int32_t parent_ref;
       int32_t ref;
+      uint32_t obj_name_begin, obj_name_end;
       glm::vec3 position;
       glm::vec4 rotation;
       glm::vec3 scale;
@@ -76,7 +81,7 @@ PhoneBankMode::PhoneBankMode() {
     read_chunk(file, "msh0", &meshes);
 
     for (const auto &elem : meshes) {
-      mesh_ref[elem.ref] = std::string(&strings[0] + elem.name_begin, &strings[0] + elem.name_end);
+      mesh_ref[elem.ref] = std::string(&strings[0] + elem.mesh_name_begin, &strings[0] + elem.mesh_name_end);
     }
 
     for (const auto &entry : transforms) {
@@ -84,8 +89,19 @@ PhoneBankMode::PhoneBankMode() {
       transform->position = entry.position;
       transform->rotation = glm::quat(entry.rotation.w, entry.rotation.x, entry.rotation.y, entry.rotation.z);
       transform->scale = entry.scale;
+      std::string obj_name(&strings[0] + entry.obj_name_begin, &strings[0] + entry.obj_name_end);
+
       if (mesh_ref.find(entry.ref) != mesh_ref.end()) {
-        attach_object(transform, mesh_ref.at(entry.ref));
+        auto object = attach_object(transform, mesh_ref.at(entry.ref));
+        if (obj_name == "Phone.001") {
+          first_phone = object;
+        } else if (obj_name == "Phone.002") {
+          second_phone = object;
+        } else if (obj_name == "Phone.003") {
+          third_phone = object;
+        } else if (obj_name == "Phone.004") {
+          fourth_phone = object;
+        }
       }
     }
   }
@@ -98,8 +114,8 @@ PhoneBankMode::PhoneBankMode() {
     camera = scene.new_camera(transform);
   }
 
-  //start the 'loop' sample playing at the large crate:
-//  loop = sample_loop->play(large_crate->transform->position, 1.0f, Sound::Loop);
+  //start the 'loop' sample playing at the first phone:
+  loop = sample_loop->play(first_phone->transform->position, 1.0f, Sound::Loop);
 }
 
 PhoneBankMode::~PhoneBankMode() {
@@ -175,10 +191,10 @@ void PhoneBankMode::update(float elapsed) {
     //camera looks down -z, so right is +x:
     Sound::listener.set_right(glm::normalize(cam_to_world[0]));
 
-//    if (loop) {
-//      glm::mat4 large_crate_to_world = large_crate->transform->make_local_to_world();
-//      loop->set_position(large_crate_to_world * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
-//    }
+    if (loop) {
+      glm::mat4 first_phone_to_world = first_phone->transform->make_local_to_world();
+      loop->set_position(first_phone_to_world * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
+    }
   }
 
 //  dot_countdown -= elapsed;

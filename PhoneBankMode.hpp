@@ -6,6 +6,7 @@
 #include "GL.hpp"
 #include "Scene.hpp"
 #include "Sound.hpp"
+#include "WalkMesh.hpp"
 
 #include <SDL.h>
 #include <glm/glm.hpp>
@@ -45,8 +46,10 @@ struct PhoneBankMode : public Mode {
   Scene scene;
   Scene::Camera *camera = nullptr;
 
-//  Scene::Object *large_crate = nullptr;
-//  Scene::Object *small_crate = nullptr;
+  Scene::Object *first_phone = nullptr;
+  Scene::Object *second_phone = nullptr;
+  Scene::Object *third_phone = nullptr;
+  Scene::Object *fourth_phone = nullptr;
 
   //when this reaches zero, the 'dot' sample is triggered at the small crate:
 //  float dot_countdown = 1.0f;

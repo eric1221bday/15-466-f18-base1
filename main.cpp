@@ -33,7 +33,7 @@
 int main(int argc, char **argv) {
   struct {
     std::string title = "Another Infinite Night at the Orbital Phone Bank";
-    glm::uvec2 size = glm::uvec2(640, 480);
+    glm::uvec2 size = glm::uvec2(1280, 720);
   } config;
 
   //------------  initialization ------------
@@ -151,7 +151,7 @@ int main(int argc, char **argv) {
     }
 
     {  //(2) call the current mode's "update" function to deal with elapsed
-       //time:
+       // time:
       auto current_time = std::chrono::high_resolution_clock::now();
       static auto previous_time = current_time;
       float elapsed =

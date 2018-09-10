@@ -15,6 +15,9 @@
 #define GLM_ENABLE_EXPERIMENTAL
 #include "glm/gtx/string_cast.hpp"
 
+#include <ctime>
+#include <random>
+#include <sstream>
 #include <unordered_map>
 #include <vector>
 
@@ -43,6 +46,12 @@ struct PhoneBankMode : public Mode {
   void handle_phone();
 
   void show_phone_menu();
+
+  void show_win_menu();
+
+  void show_lose_menu();
+
+  Scene::Object *choose_phone();
 
   struct {
     bool forward = false;
@@ -112,7 +121,9 @@ struct PhoneBankMode : public Mode {
   Scene::Object *second_phone = nullptr;
   Scene::Object *third_phone = nullptr;
   Scene::Object *fourth_phone = nullptr;
+
   Scene::Object *selectable_phone = nullptr;
+  Scene::Object *ringing_phone = nullptr;
 
   std::unordered_map<Scene::Object *, Box3> phone_hitbox;
 
@@ -121,9 +132,21 @@ struct PhoneBankMode : public Mode {
   float azimuth = 0.0f, elevation = float(M_PI_2);
   float elev_offset;
 
+  uint32_t merits = 0, strikes = 0;
+
   // when this reaches zero, the 'dot' sample is triggered at the small crate:
   //  float dot_countdown = 1.0f;
+  float instruction_countdown = 0.0f;
+  float instruction_duration = 2.0f;
+
+  std::default_random_engine generator;
+  std::uniform_int_distribution<uint32_t> distribution;
 
   // this 'loop' sample is played at the large crate:
   std::shared_ptr<Sound::PlayingSample> loop;
+  std::shared_ptr<Sound::PlayingSample> ringing;
+
+  std::vector<std::string> answers = {
+      {"HERON", "DOG", "FISH", "MONKEY", "BIRD"}};
+  std::string resolution_display = "JUST CHECKING IN";
 };

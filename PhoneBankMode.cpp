@@ -34,12 +34,19 @@ Load<Sound::Sample> sample_dot(LoadTagDefault, []() {
 Load<Sound::Sample> sample_loop(LoadTagDefault, []() {
   return new Sound::Sample(data_path("loop.wav"));
 });
+Load<Sound::Sample> phone_ring(LoadTagDefault, []() {
+  return new Sound::Sample(data_path("telephone-ring-01a.wav"));
+});
+Load<Sound::Sample> dial_tone(LoadTagDefault, []() {
+  return new Sound::Sample(data_path("rotary-phone-2-nr0.wav"));
+});
 
 Load<WalkMesh> walk_mesh(LoadTagDefault, []() {
   return new WalkMesh(data_path("phone-bank-walk.blob"));
 });
 
-PhoneBankMode::PhoneBankMode() {
+PhoneBankMode::PhoneBankMode()
+    : generator(std::time(nullptr)), distribution(0, 3) {
   auto attach_object = [this](Scene::Transform *transform,
                               std::string const &name) {
     Scene::Object *object = scene.new_object(transform);
@@ -122,6 +129,8 @@ PhoneBankMode::PhoneBankMode() {
     }
   }
 
+  ringing_phone = choose_phone();
+
   walk_point = walk_mesh->start(glm::vec3(0.0f, -3.0f, 2.5f));
   player_up = walk_mesh->world_normal(walk_point);
   player_at = walk_mesh->world_point(walk_point) + player_up * 1.7f;
@@ -143,11 +152,14 @@ PhoneBankMode::PhoneBankMode() {
   }
 
   // start the 'loop' sample playing at the first phone:
-  loop = sample_loop->play(first_phone->transform->position, 1.0f, Sound::Loop);
+  loop = sample_loop->play(player_at, 0.2f, Sound::Loop);
+  ringing =
+      phone_ring->play(ringing_phone->transform->position, 2.0f, Sound::Loop);
 }
 
 PhoneBankMode::~PhoneBankMode() {
   if (loop) loop->stop();
+  if (ringing) ringing->stop();
 }
 
 bool PhoneBankMode::handle_event(SDL_Event const &evt,
@@ -172,6 +184,21 @@ bool PhoneBankMode::handle_event(SDL_Event const &evt,
       return true;
     }
   }
+
+  // handle activating phone
+  if (evt.type == SDL_KEYDOWN &&
+      evt.key.keysym.scancode == SDL_SCANCODE_SPACE && selectable_phone) {
+    if (selectable_phone == ringing_phone) {
+      instruction_countdown = instruction_duration;
+      merits++;
+      ringing_phone = choose_phone();
+      ringing->set_position(ringing_phone->transform->position);
+    } else {
+      strikes++;
+      dial_tone->play(selectable_phone->transform->position, 3.0f);
+    }
+  }
+
   // handle tracking the mouse for rotation control:
   if (!mouse_captured) {
     if (evt.type == SDL_KEYDOWN &&
@@ -209,6 +236,14 @@ bool PhoneBankMode::handle_event(SDL_Event const &evt,
 }
 
 void PhoneBankMode::update(float elapsed) {
+  if (merits >= 10) {
+    show_win_menu();
+  }
+
+  if (strikes >= 3) {
+    show_lose_menu();
+  }
+
   glm::mat3 directions = glm::mat3_cast(camera->transform->rotation);
   float amt = 5.0f * elapsed;
 
@@ -237,21 +272,17 @@ void PhoneBankMode::update(float elapsed) {
     Sound::listener.set_right(glm::normalize(cam_to_world[0]));
 
     if (loop) {
-      glm::mat4 first_phone_to_world =
-          first_phone->transform->make_local_to_world();
-      loop->set_position(first_phone_to_world *
-                         glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
+      //      glm::mat4 first_phone_to_world =
+      //          first_phone->transform->make_local_to_world();
+      loop->set_position(player_at);
     }
   }
 
-  //  dot_countdown -= elapsed;
-  //  if (dot_countdown <= 0.0f) {
-  //    dot_countdown = (rand() / float(RAND_MAX) * 2.0f) + 0.5f;
-  //    glm::mat4x3 small_crate_to_world =
-  //    small_crate->transform->make_local_to_world();
-  //    sample_dot->play(small_crate_to_world * glm::vec4(0.0f, 0.0f,
-  //    0.0f, 1.0f));
-  //  }
+  if (instruction_countdown > 0.0f) {
+    instruction_countdown -= elapsed;
+  } else {
+    instruction_countdown = 0.0f;
+  }
 }
 
 void PhoneBankMode::draw(glm::uvec2 const &drawable_size) {
@@ -293,17 +324,63 @@ void PhoneBankMode::draw(glm::uvec2 const &drawable_size) {
     draw_text(message, glm::vec2(-0.5f * width, -1.0f), height,
               glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
 
+    // phone activation instructions
     if (selectable_phone) {
       std::string phone_name("PHONE");
       float width = text_width(phone_name, height);
-      draw_text(phone_name, glm::vec2(-0.5f * width, -0.5f), height,
+      draw_text(phone_name, glm::vec2(-0.5f * width, -0.4f), height,
                 glm::vec4(0.0f, 0.0f, 0.5f, 1.0f));
+      std::string activation_instruction("PRESS SPACE TO ACTIVATE");
+      float instruction_height = 0.04f;
+      width = text_width(activation_instruction, instruction_height);
+      draw_text(activation_instruction, glm::vec2(-0.5f * width, -0.47f),
+                instruction_height, glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
     }
+
+    width = text_width(resolution_display, height);
+    draw_text(resolution_display, glm::vec2(-0.5f * width, -0.3f), height,
+              glm::vec4(1.0f, 1.0f, 1.0f,
+                        instruction_countdown / instruction_duration));
+
+    // handle drawing merits
+    std::stringstream merit_ss;
+    for (uint32_t i = 0; i < merits; i++) {
+      merit_ss << " * ";
+    }
+    std::string merit_str = merit_ss.str();
+    width = text_width(merit_str, height);
+    draw_text(merit_str, glm::vec2(-0.5f * width, -0.90f), height,
+              glm::vec4(1.0f, 1.0f, 0.0f, 1.0f));
+
+    // handle drawing strikes
+    std::stringstream strike_ss;
+    for (uint32_t i = 0; i < strikes; i++) {
+      strike_ss << "X";
+    }
+    std::string strike_str = strike_ss.str();
+    height = 0.1f;
+    width = text_width(strike_str, height);
+    draw_text(strike_str, glm::vec2(0.95f, 0.85f), height,
+              glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
 
     glUseProgram(0);
   }
 
   GL_ERRORS();
+}
+
+Scene::Object *PhoneBankMode::choose_phone() {
+  uint32_t number = distribution(generator);
+
+  if (number == 0) {
+    return first_phone;
+  } else if (number == 1) {
+    return second_phone;
+  } else if (number == 2) {
+    return third_phone;
+  } else {
+    return fourth_phone;
+  }
 }
 
 void PhoneBankMode::handle_phone() {
@@ -322,6 +399,34 @@ void PhoneBankMode::handle_phone() {
 }
 
 void PhoneBankMode::show_phone_menu() {}
+
+void PhoneBankMode::show_win_menu() {
+  std::shared_ptr<MenuMode> menu = std::make_shared<MenuMode>();
+
+  std::shared_ptr<Mode> game = shared_from_this();
+  menu->background = game;
+
+  menu->choices.emplace_back("CONGRATULATIONS");
+  menu->choices.emplace_back("QUIT", []() { Mode::set_current(nullptr); });
+
+  menu->selected = 1;
+
+  Mode::set_current(menu);
+}
+
+void PhoneBankMode::show_lose_menu() {
+  std::shared_ptr<MenuMode> menu = std::make_shared<MenuMode>();
+
+  std::shared_ptr<Mode> game = shared_from_this();
+  menu->background = game;
+
+  menu->choices.emplace_back("YOU LOSE");
+  menu->choices.emplace_back("QUIT", []() { Mode::set_current(nullptr); });
+
+  menu->selected = 1;
+
+  Mode::set_current(menu);
+}
 
 void PhoneBankMode::show_pause_menu() {
   std::shared_ptr<MenuMode> menu = std::make_shared<MenuMode>();

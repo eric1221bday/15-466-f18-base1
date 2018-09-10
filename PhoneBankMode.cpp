@@ -106,11 +106,20 @@ PhoneBankMode::PhoneBankMode() {
     }
   }
 
+  walk_point = walk_mesh->start(glm::vec3(0.0f, -3.0f, 2.5f));
+  player_at = walk_mesh->world_point(walk_point);
+  player_up = walk_mesh->world_normal(walk_point);
+  player_right = glm::vec3(1.0f, 0.0f, 0.0f);
+
+  std::cout << glm::to_string(player_up) << std::endl;
+  std::cout << glm::to_string(player_right) << std::endl;
+  std::cout << glm::to_string(glm::cross(player_up, player_right)) << std::endl;
+
   { //Camera looking at the origin:
     Scene::Transform *transform = scene.new_transform();
-    transform->position = glm::vec3(0.0f, -10.0f, 1.0f);
+    transform->position = player_at + player_up * 1.7f;
     //Cameras look along -z, so rotate view to look at origin:
-    transform->rotation = glm::angleAxis(glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+    transform->rotation = glm::angleAxis(elevation, player_right);
     camera = scene.new_camera(transform);
   }
 
@@ -164,13 +173,11 @@ bool PhoneBankMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_
       //Note: float(window_size.y) * camera->fovy is a pixels-to-radians conversion factor
       float yaw = evt.motion.xrel / float(window_size.y) * camera->fovy;
       float pitch = evt.motion.yrel / float(window_size.y) * camera->fovy;
-      yaw = -yaw;
-      pitch = -pitch;
+      azimuth -= yaw;
+      elevation -= pitch;
       camera->transform->rotation = glm::normalize(
-          camera->transform->rotation
-              * glm::angleAxis(yaw, glm::vec3(0.0f, 1.0f, 0.0f))
-              * glm::angleAxis(pitch, glm::vec3(1.0f, 0.0f, 0.0f))
-      );
+          glm::angleAxis(azimuth, player_up)
+              * glm::angleAxis(elevation, player_right));
       return true;
     }
   }

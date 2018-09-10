@@ -12,6 +12,9 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 
+#define GLM_ENABLE_EXPERIMENTAL
+#include "glm/gtx/string_cast.hpp"
+
 #include <vector>
 
 // The 'PhoneBankMode' implements the phone bank game:
@@ -50,6 +53,10 @@ struct PhoneBankMode : public Mode {
   Scene::Object *second_phone = nullptr;
   Scene::Object *third_phone = nullptr;
   Scene::Object *fourth_phone = nullptr;
+
+  WalkMesh::WalkPoint walk_point;
+  glm::vec3 player_at, player_up, player_right;
+  float azimuth = 0.0f, elevation = float(M_PI_2);
 
   //when this reaches zero, the 'dot' sample is triggered at the small crate:
 //  float dot_countdown = 1.0f;

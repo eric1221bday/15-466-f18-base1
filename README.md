@@ -26,6 +26,8 @@ Phone menu navigation uses arrow keys instead of <kbd>W</kbd><kbd>A</kbd><kbd>S<
 Good / Bad / Ugly Code:
 
 * The re-utilization of the pause menu as phone menus was quite nice as it drastically reduced the amount of code necessary.
+* The camera control handling that copes with player normal alterations is a piece of code I was quite proud of.
+* The overall game logic is quite scattered and a little hard to follow.
 * The walk mesh collision detection code is very ugly as it requires both recursion and a recursion depth guard in order to deal with numerical instabilities and stack overflows.
 
 # Using This Base Code

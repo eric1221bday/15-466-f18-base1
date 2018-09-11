@@ -225,16 +225,13 @@ void WalkMesh::walk(WalkPoint &wp, glm::vec3 const &step,
         std::cout << "should be able to find triangle!!" << std::endl;
       }
     } else {
-      //      if (projected_weights.x < 0) {
-      //        weights_step.x = 0.0f;
-      //      }
-      //      if (projected_weights.y < 0) {
-      //        weights_step.y = 0.0f;
-      //      }
-      //      if (projected_weights.z < 0) {
-      //        weights_step.z = 0.0f;
-      //      }
-
+      glm::vec3 crossed_vector =
+          vertices[crossed_edge[1]] - vertices[crossed_edge[0]];
+      glm::vec3 added_step = glm::dot(crossed_vector, reduced_step) *
+                             crossed_vector / glm::length2(crossed_vector);
+      wp.weights =
+          barycentric(world_point_edge + added_step, vertices[wp.triangle[0]],
+                      vertices[wp.triangle[1]], vertices[wp.triangle[2]]);
       //      walk(wp, weights_step);
     }
 

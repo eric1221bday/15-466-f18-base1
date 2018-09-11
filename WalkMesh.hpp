@@ -11,7 +11,8 @@
 
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/hash.hpp>  //allows the use of 'uvec2' as an unordered_map key
-#include "glm/gtx/string_cast.hpp"
+#include <glm/gtx/norm.hpp>
+#include <glm/gtx/string_cast.hpp>
 
 struct WalkMesh {
   // Walk mesh will keep track of triangles, vertices:

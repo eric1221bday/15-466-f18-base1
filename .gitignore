@@ -9,3 +9,5 @@ kit-libs-linux
 cmake-build-debug
 .idea
 .vscode
+CMakeLists.txt.user
+.DS_Store

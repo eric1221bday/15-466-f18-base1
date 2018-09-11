@@ -1,27 +1,32 @@
 # Game Information
 (Note: fill in this portion with information about your game.)
 
-Title: (TODO: your game's title)
+Title: Another Infinite Night at the Orbital Phone Bank
 
-Author: (TODO: your name)
+Author: Eric Fang
 
-Design Document: [TODO: name of design document](TODO: link to design document)
+Design Document: [design document](http://graphics.cs.cmu.edu/courses/15-466-f18/game1-designs/default/)
 
 Screen Shot:
 
-![Screen Shot](screenshot.png)
+![Phone Bank](phone-bank.png)
 
 How To Play:
 
-TODO: describe the controls and (if needed) goals/strategy.
+* Movement of player uses <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd>
+* Press <kbd>Space</kbd> in order to activate phones
+* Use <kbd>Up Arrow</kbd><kbd>Down Arrow</kbd> to navigate Menus
+* The goal is to accumulate 10 merits, which are earned by activating ringing phones and follow their instructions.
+* Mistakes would result in strikes. If 3 strikes are accumulated the game ends. 
 
 Changes From The Design Document:
 
-TODO: what did you need to add/remove/modify from the original design? Why?
+Phone menu navigation uses arrow keys instead of <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> for simplicity since the existing Menu struct uses arrow keys already.
 
 Good / Bad / Ugly Code:
 
-TODO: provide examples of code you wrote from this project that you think is good (elegant, simple, useful), bad (hack-y, brittle, unreadable), and ugly (particularly inelegant). Provide a sentence or two of justification for the examples.
+* The re-utilization of the pause menu as phone menus was quite nice as it drastically reduced the amount of code necessary.
+* The walk mesh collision detection code is very ugly as it requires both recursion and a recursion depth guard in order to deal with numerical instabilities and stack overflows.
 
 # Using This Base Code
 
